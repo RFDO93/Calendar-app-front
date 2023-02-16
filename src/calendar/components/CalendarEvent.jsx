@@ -1,12 +1,13 @@
+import { useAuthStore } from "../../hooks"
 
 export const CalendarEvent = ({event}) => {
-  const {title, user} = event;
-  const {name:userName} = user
+  const {user} = useAuthStore()
+  const {title} = event
 
   return (
     <>
       <strong>{title}</strong>
-      <span> - {userName}</span>
+      <span> - {user.name}</span>
     </>
   )
 }

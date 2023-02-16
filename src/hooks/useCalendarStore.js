@@ -1,7 +1,10 @@
 import { getTime } from "date-fns"
 import {useMemo} from "react"
 import { useDispatch, useSelector } from "react-redux"
-import { onAddNewEvent, onDeleteEvent, onSetActiveEvent, onUpdateEvent } from "../store"
+import { onAddNewEvent, onDeleteEvent, onLoadEvents, onSetActiveEvent, onUpdateEvent } from "../store"
+import { calendarApi } from '../api'
+import { convertEventsToDateEvents } from "../helpers"
+import Swal from "sweetalert2"
 
 export const useCalendarStore = () => {
 
@@ -28,27 +31,77 @@ export const useCalendarStore = () => {
   }
 
   const startSavingEvent = async (calendarEvent) => {
-    if(calendarEvent._id) {
-      dispatch(onUpdateEvent({...calendarEvent}))
-    } else {
-      dispatch(onAddNewEvent({
-        ...calendarEvent,
-        _id: new Date().getTime()
-      }))
+
+    try {
+      
+      if(calendarEvent.id) {
+  
+        const {data} = await calendarApi.put(
+          `/events/${calendarEvent.id}`,
+          calendarEvent
+        )
+
+        dispatch(onUpdateEvent({...data.evento,user:{id:data.evento.user}}))
+  
+      } else {
+  
+        const {data} = await calendarApi.post(
+          '/events',
+          calendarEvent
+        )
+  
+        dispatch(onAddNewEvent(data.evento))
+  
+      }
+    
+    } catch (error) {
+      console.log(error)
+      Swal.fire(
+        'Error al gestionar el evento', 
+        error?.response?.data?.msg || "Problema al gestionar el evento",
+        'error'
+      )
     }
   }
 
   const startDeletingEvent = async () => {
-    dispatch(onDeleteEvent())
+
+    try {
+      const {data} = await calendarApi.delete(`/events/${activeEvent.id}`)
+      dispatch(onDeleteEvent())
+    } catch (error) {
+      console.log(error)
+      Swal.fire(
+        'Error al eliminar', 
+        error?.response?.data?.msg || "Problema al eliminar el evento",
+        'error'
+      )
+    }
+  }
+
+  const startLoadingEvents = async () => {
+    try {
+      const { data } = await calendarApi.get('/events')
+      const events = convertEventsToDateEvents(data.eventos)
+      dispatch(onLoadEvents(events))
+    } catch (error) {
+      console.log(error)
+      Swal.fire(
+        'Error al consultar los eventos', 
+        error?.response?.data?.msg || "Problema al consultar el listado de eventos",
+        'error'
+      )
+    }
   }
 
   return {
     events:listEvents,
     activeEvent,
-    hasEventSelected: !!activeEvent?._id,
+    hasEventSelected: !!activeEvent?.id,
 
     setActiveEvent,
+    startDeletingEvent,
+    startLoadingEvents,
     startSavingEvent,
-    startDeletingEvent
   }
 }

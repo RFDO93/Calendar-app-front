@@ -7,7 +7,7 @@ import es from 'date-fns/locale/es'
 import Swal from "sweetalert2"
 import 'sweetalert2/dist/sweetalert2.min.css'
 
-import { useUiStore } from "../../hooks"
+import { useAuthStore, useUiStore } from "../../hooks"
 import { useCalendarStore } from "../../hooks/useCalendarStore"
 
 registerLocale('es', es)
@@ -41,6 +41,11 @@ export const CalendarModal = () => {
   const {activeEvent,startSavingEvent} = useCalendarStore()
   const [formSubmitted, setFormSubmitted] = useState(false)
   const [formValues, setFormValues] = useState(defaultField)
+  const {user} = useAuthStore()
+
+  const isMyEvent = useMemo(() => {
+    return (user?.uid === activeEvent?.user?._id) || (user?.uid === activeEvent?.user?.id)
+  }, [activeEvent])
 
   const titleClassValid = useMemo(() => {
     if(!formSubmitted) return ''
@@ -120,6 +125,7 @@ export const CalendarModal = () => {
               showTimeSelect
               locale="es"
               timeCaption="Hora"
+              disabled={!isMyEvent}
             />
         </div>
 
@@ -134,6 +140,7 @@ export const CalendarModal = () => {
               showTimeSelect
               locale="es"
               timeCaption="Hora"
+              disabled={!isMyEvent}
             />
         </div>
 
@@ -148,6 +155,7 @@ export const CalendarModal = () => {
                 autoComplete="off"
                 value={formValues.title}
                 onChange={onInputChange}
+                disabled={!isMyEvent}
             />
             <small id="emailHelp" className="form-text text-muted">Una descripción corta</small>
         </div>
@@ -161,6 +169,7 @@ export const CalendarModal = () => {
                 name="notes"
                 value={formValues.notes}
                 onChange={onInputChange}
+                disabled={!isMyEvent}
             ></textarea>
             <small id="emailHelp" className="form-text text-muted">Información adicional</small>
         </div>
@@ -168,6 +177,7 @@ export const CalendarModal = () => {
         <button
             type="submit"
             className="btn btn-outline-primary btn-block"
+            disabled={!isMyEvent}
         >
             <i className="far fa-save"></i>
             <span> Guardar</span>
